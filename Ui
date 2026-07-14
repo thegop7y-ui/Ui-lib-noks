@@ -23,7 +23,7 @@ local Library = {
     Flags = { },
     MenuKeybind = tostring(Enum.KeyCode.X), -- has to be a string
 
-    Directory = "juanitaaaaaaa",
+    Directory = "noks ui lib",
     Folders = {
         Assets = "/Assets",
         Configs = "/Configs",
@@ -2649,9 +2649,9 @@ local Library = {
                 Items["Pages"] = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Items["Background"].Instance,
-                    AnchorPoint = Vector2.new(1, 0),
+                    AnchorPoint = Vector2.new(0.5, 0),
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, 0),
+                    Position = UDim2.new(0.5, 0, 0, 0),
                     Size = UDim2.new(0, 0, 0, 30),
                     BorderSizePixel = 0,
                     AutomaticSize = Enum.AutomaticSize.X
@@ -2687,7 +2687,7 @@ local Library = {
                 Window.Items = Items
             end
 
-            -- Bouton noir centré en haut pour Ouvrir/Fermer
+            -- Bouton noir centrÃ© en haut pour Ouvrir/Fermer
             Items["ToggleButton"] = Library:Create("TextButton", {
                 Name = "\0",
                 Parent = Library.Holder.Instance,
