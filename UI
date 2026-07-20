@@ -2704,9 +2704,49 @@ local Library = {
                 AutoButtonColor = false
             })
 
-            Items["ToggleButton"]:Connect("MouseButton1Down", function()
-                Window:SetOpen(not Window.IsOpen)
-            end)
+            do
+                local ToggleBtn = Items["ToggleButton"].Instance
+                local Dragging = false
+                local DragStart
+                local StartPos
+                local HasDragged = false
+                local DragThreshold = 5
+
+                Items["ToggleButton"]:Connect("InputBegan", function(Input)
+                    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                        Dragging = true
+                        HasDragged = false
+                        DragStart = Input.Position
+                        StartPos = ToggleBtn.Position
+
+                        local Conn
+                        Conn = Input.Changed:Connect(function()
+                            if Input.UserInputState == Enum.UserInputState.End then
+                                Dragging = false
+                                Conn:Disconnect()
+
+                                if not HasDragged then
+                                    Window:SetOpen(not Window.IsOpen)
+                                end
+                            end
+                        end)
+                    end
+                end)
+
+                Library:Connect(UserInputService.InputChanged, function(Input)
+                    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+                        local Delta = Input.Position - DragStart
+                        if math.abs(Delta.X) > DragThreshold or math.abs(Delta.Y) > DragThreshold then
+                            HasDragged = true
+                        end
+
+                        ToggleBtn.Position = UDim2.new(
+                            StartPos.X.Scale, StartPos.X.Offset + Delta.X,
+                            StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y
+                        )
+                    end
+                end)
+            end
 
             local Debounce = false
 
