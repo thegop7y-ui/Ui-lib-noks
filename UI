@@ -2687,7 +2687,7 @@ local Library = {
                 Window.Items = Items
             end
 
-            -- Bouton noir centré en haut pour Ouvrir/Fermer
+            -- Bouton noir centrÃ© en haut pour Ouvrir/Fermer
             Items["ToggleButton"] = Library:Create("TextButton", {
                 Name = "\0",
                 Parent = Library.Holder.Instance,
@@ -2703,9 +2703,6 @@ local Library = {
                 ZIndex = 100,
                 AutoButtonColor = false
             })
-
-            -- >>> AJOUT DRAG POUR LE BOUTON OPEN/CLOSE <<<
-            Items["ToggleButton"]:MakeDraggable()
 
             Items["ToggleButton"]:Connect("MouseButton1Down", function()
                 Window:SetOpen(not Window.IsOpen)
@@ -2741,10 +2738,11 @@ local Library = {
                 end
             end
 
-            -- >>> CORRECTION CENTRAGE UNIVERSEL <<<
             function Window:Center()
-                Items["Outline"].Instance.AnchorPoint = Vector2.new(0.5, 0.5)
-                Items["Outline"].Instance.Position = UDim2.new(0.5, 0, 0.5, 0)
+                local AbsPos = Items["Outline"].Instance.AbsolutePosition
+                Items["Outline"].Instance.AnchorPoint = Vector2.new(0, 0)
+                task.wait()
+                Items["Outline"].Instance.Position = UDim2.new(0, AbsPos.X, 0, AbsPos.Y + GuiInset)
             end
 
             Library:Connect(UserInputService.InputBegan, function(Input)
