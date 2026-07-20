@@ -433,71 +433,55 @@ local Library = {
         local Gui = Self.Instance
         local Dragging = false 
         local DragStart
-        local StartAbsPos
-        local DragThreshold = 5 -- px : au-delà c'est un drag, en-dessous c'est un clic
-
-        Self.DragState = {
-            WasDragged = false,
-            Dragging = false
-        }
+        local StartPosition 
     
-        local function Update(Input)
+        local Set = function(Input)
             local Scale = Library:GetScreenScale()
             local DragDelta = (Input.Position - DragStart) / Scale
             
-            local NewX = StartAbsPos.X + DragDelta.X
-            local NewY = StartAbsPos.Y + DragDelta.Y
+            local NewX = StartPosition.X.Offset + DragDelta.X
+            local NewY = StartPosition.Y.Offset + DragDelta.Y
 
             local ScreenSize = Gui.Parent.AbsoluteSize / Scale
             local GuiSize = Gui.AbsoluteSize / Scale
             
-            -- Clamping qui respecte l'AnchorPoint
-            local AP = Gui.AnchorPoint
-            local MinX = -GuiSize.X * AP.X
-            local MinY = -GuiSize.Y * AP.Y
-            local MaxX = ScreenSize.X - GuiSize.X * (1 - AP.X)
-            local MaxY = ScreenSize.Y - GuiSize.Y * (1 - AP.Y)
+            NewX = math.clamp(NewX, 0, ScreenSize.X - GuiSize.X)
+            NewY = math.clamp(NewY, 0, ScreenSize.Y - GuiSize.Y)
     
-            NewX = math.clamp(NewX, MinX, MaxX)
-            NewY = math.clamp(NewY, MinY, MaxY)
-    
-            -- Position directe : aucun tween pendant le drag (obligatoire pour suivre le doigt)
-            Gui.Position = UDim2.new(0, NewX, 0, NewY)
+            Self:Tween({Position = UDim2.new(0, NewX, 0, NewY)}, TweenInfo.new(0.65, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out))
         end
+    
+        local InputChanged
     
         Self:Connect("InputBegan", function(Input)
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 Dragging = true
-                Self.DragState.Dragging = true
-                Self.DragState.WasDragged = false
-                
                 DragStart = Input.Position
-                local Scale = Library:GetScreenScale()
-                StartAbsPos = Vector2.new(Gui.AbsolutePosition.X / Scale, Gui.AbsolutePosition.Y / Scale)
+                StartPosition = Gui.Position
+    
+                if InputChanged then 
+                    return
+                end
+    
+                InputChanged = Input.Changed:Connect(function()
+                    if Input.UserInputState == Enum.UserInputState.End then
+                        Dragging = false
+                        InputChanged:Disconnect()
+                        InputChanged = nil
+                    end
+                end)
             end
         end)
     
         Library:Connect(UserInputService.InputChanged, function(Input)
-            if not Dragging then return end
-
             if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-                if (Input.Position - DragStart).Magnitude > DragThreshold then
-                    Self.DragState.WasDragged = true
+                if Dragging then
+                    Set(Input)
                 end
-                Update(Input)
-            end
-        end)
-
-        Library:Connect(UserInputService.InputEnded, function(Input)
-            if not Dragging then return end
-
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                Dragging = false
-                Self.DragState.Dragging = false
             end
         end)
     
-        return Self.DragState
+        return Dragging
     end
 
     Library.MakeResizeable = function(Self, Minimum)
@@ -2703,7 +2687,7 @@ local Library = {
                 Window.Items = Items
             end
 
-            -- Bouton noir centré en haut pour Ouvrir/Fermer
+            -- Bouton noir centrÃ© en haut pour Ouvrir/Fermer
             Items["ToggleButton"] = Library:Create("TextButton", {
                 Name = "\0",
                 Parent = Library.Holder.Instance,
@@ -2720,15 +2704,8 @@ local Library = {
                 AutoButtonColor = false
             })
 
-            -- >>> DRAG : suit le doigt pixel pour pixel <<<
-            Items["ToggleButton"]:MakeDraggable()
-
-            -- >>> CLIC : ne toggle que si on n'a PAS draggé <<<
-            Items["ToggleButton"]:Connect("MouseButton1Up", function()
-                local State = Items["ToggleButton"].DragState
-                if not State or not State.WasDragged then
-                    Window:SetOpen(not Window.IsOpen)
-                end
+            Items["ToggleButton"]:Connect("MouseButton1Down", function()
+                Window:SetOpen(not Window.IsOpen)
             end)
 
             local Debounce = false
@@ -2761,10 +2738,11 @@ local Library = {
                 end
             end
 
-            -- >>> CORRECTION CENTRAGE UNIVERSEL <<<
             function Window:Center()
-                Items["Outline"].Instance.AnchorPoint = Vector2.new(0.5, 0.5)
-                Items["Outline"].Instance.Position = UDim2.new(0.5, 0, 0.5, 0)
+                local AbsPos = Items["Outline"].Instance.AbsolutePosition
+                Items["Outline"].Instance.AnchorPoint = Vector2.new(0, 0)
+                task.wait()
+                Items["Outline"].Instance.Position = UDim2.new(0, AbsPos.X, 0, AbsPos.Y + GuiInset)
             end
 
             Library:Connect(UserInputService.InputBegan, function(Input)
